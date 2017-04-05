@@ -8,8 +8,11 @@ from PIL import Image
 
 from mlp import MultiLayerPerceptron as MLP
 
-NOISE_LEVEL = 0.20
-IMAGE_PATH = 'lenna.jpg'
+NOISE_LEVEL = 0.2
+IMAGE_PATH = 'lena100x100.png'
+
+width = None
+height = None
 
 def add_noise(img, points):
     pixels = img.load()
@@ -26,11 +29,17 @@ def generate_training_set(img, points):
     for x, y in points:
         gray = pixels[x, y]
 
-        inputs = np.array([x, y])
+        inputs = normalize(x, y)
         output = int2bin(gray)
         training_set.append((inputs, output))
 
     return training_set
+
+def normalize(x, y):
+    x = x / float(width)
+    y = y / float(height)
+
+    return np.array([x, y])
 
 def int2bin(value):
     binary = format(value, 'b').zfill(8)
@@ -47,7 +56,7 @@ def restore_image(img, points, mlp):
     pixels = img.load()
 
     for x, y in points:
-        inputs = np.array([x, y])
+        inputs = normalize(x, y)
         output = mlp.test(inputs, discretize=True)
         gray = bin2int(output)
 
@@ -56,7 +65,7 @@ def restore_image(img, points, mlp):
     return img
 
 if __name__ == '__main__':
-    mlp = MLP((2, 10, 10, 8)) # create MLP
+    mlp = MLP((2, 90, 50, 8)) # create MLP
     img = Image.open(IMAGE_PATH).convert('L') # convert to grayscale
 
     # show original image
@@ -93,9 +102,9 @@ if __name__ == '__main__':
 
     converged, epochs = mlp.train(
         training_set,
-        learning_rate=0.1,
-        max_epochs=10000,
-        min_error=0.01)
+        learning_rate=0.2,
+        max_epochs=200,
+        min_error=1.6)
 
     if converged:
         print u'La red convergió en {}'.format(epochs)
