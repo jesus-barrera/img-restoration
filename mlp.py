@@ -91,8 +91,6 @@ class MultiLayerPerceptron:
                 error = desired - outputs
                 total_error += error.dot(error) # squared error
 
-                print self._outputs_array[1]
-
                 # Backward pass
                 self._back_propagation(error, learning_rate)
 

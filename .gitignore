@@ -1,3 +1,6 @@
 *.png
 *.jpg
 *.pyc
+*.bmp
+*.tif
+*.zip

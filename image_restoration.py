@@ -3,13 +3,13 @@
 import numpy as np
 import random
 import sys
-
+from os import path
 from PIL import Image
 
 from mlp import MultiLayerPerceptron as MLP
 
 NOISE_LEVEL = 0.2
-IMAGE_PATH = 'lena100x100.png'
+IMAGE_PATH = 'house.tif'
 
 width = None
 height = None
@@ -30,7 +30,8 @@ def generate_training_set(img, points):
         gray = pixels[x, y]
 
         inputs = normalize(x, y)
-        output = int2bin(gray)
+        # output = int2bin(gray)
+        output = gray / float(255)
         training_set.append((inputs, output))
 
     return training_set
@@ -57,19 +58,22 @@ def restore_image(img, points, mlp):
 
     for x, y in points:
         inputs = normalize(x, y)
-        output = mlp.test(inputs, discretize=True)
-        gray = bin2int(output)
+        # output = mlp.test(inputs, discretize=True)
+        # gray = bin2int(output)
 
-        pixels[x, y] = gray
+        gray = mlp.test(inputs, discretize=False)
+        pixels[x, y] = gray * 255
 
     return img
 
 if __name__ == '__main__':
-    mlp = MLP((2, 90, 50, 8)) # create MLP
+    mlp = MLP((2, 28, 15, 1)) # create MLP
     img = Image.open(IMAGE_PATH).convert('L') # convert to grayscale
 
+    file_name, file_ext = path.splitext(IMAGE_PATH)
+
     # show original image
-    img.show()
+    img.save(file_name + '_gray' + file_ext)
 
     width, height = img.size
 
@@ -93,7 +97,7 @@ if __name__ == '__main__':
     add_noise(img, noise_points)
 
     # show image with noise
-    img.show()
+    img.save(file_name + '_noise' + file_ext)
 
     # ----------
     # training
@@ -102,19 +106,23 @@ if __name__ == '__main__':
 
     converged, epochs = mlp.train(
         training_set,
-        learning_rate=0.2,
-        max_epochs=200,
-        min_error=1.6)
+        learning_rate=1.3,
+        max_epochs=600,
+        min_error=0.005)
 
     if converged:
-        print u'La red convergió en {}'.format(epochs)
+        print u'La red convergió en ' + epochs
     else:
         print u'La red no convergió'
 
     # ----------
     # restoration
     # ----------
-    restore_image(img, noise_points, mlp)
 
     # show restored image
-    img.show()
+    restore_image(img, noise_points, mlp)
+    img.save(file_name + '_restored' + file_ext)
+
+    # completly recreate the image using the trained MLP
+    restore_image(img, points, mlp)
+    img.save(file_name + '_recreated' + file_ext)
